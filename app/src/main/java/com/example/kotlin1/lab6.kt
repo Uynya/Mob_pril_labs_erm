@@ -2,23 +2,19 @@ package com.example.kotlin1
 
 import android.content.res.Configuration
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.example.kotlin1.ui.theme.Kotlin1Theme
 import androidx.compose.ui.platform.LocalContext
 
-class MainActivity3 : ComponentActivity() {
+class lab6 : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -122,4 +118,89 @@ fun StyledCard(){
 @Composable
 fun StyledCard_prev(){
     StyledCard()
+}
+
+@Composable
+fun RecipeHeader(title: String, description: String) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = title,
+        )
+        Text(
+            text = description,
+        )
+    }
+}
+
+@Composable
+fun RecipeMeta(time: String, servings: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = "Время: $time")
+        Text(text = "Порции: $servings")
+    }
+}
+
+@Composable
+fun RecipeCard(
+    title: String,
+    description: String,
+    time: String,
+    servings: String,
+    onCardClick: () -> Unit = {}
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .background(Color.LightGray)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        RecipeHeader(title = title, description = description)
+        RecipeMeta(time = time, servings = servings)
+        Button(
+            onClick = {
+            //обработка нажатия клика, пока нет
+            },
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text("Готовить")
+        }
+    }
+}
+
+@Preview(
+    name = "Светлая тема",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_NO
+)
+@Composable
+fun RecipeCardLightPreview() {
+    RecipeCard(
+        title = "Паста Карбонара",
+        description = "Классическая итальянская паста с беконом, яйцом и сыром",
+        time = "30 мин",
+        servings = "4 порции"
+    )
+}
+
+@Preview(
+    name = "Тёмная тема",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun RecipeCardDarkPreview() {
+    RecipeCard(
+        title = "Паста Карбонара",
+        description = "Классическая итальянская паста с беконом, яйцом и сыром",
+        time = "30 мин",
+        servings = "4 порции"
+    )
 }
