@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">kotlin1</string>
+    <string name="title_activity_lab2">lab2</string>
+    <string name="title_activity_main2">MainActivity2</string>
+    <string name="title_activity_main3">MainActivity3</string>
+    <string name="title_activity_main4">MainActivity4</string>
+    <string name="title_activity_main5">MainActivity5</string>
+    <string name="notes_title">Заметочки</string>
+</resources>
