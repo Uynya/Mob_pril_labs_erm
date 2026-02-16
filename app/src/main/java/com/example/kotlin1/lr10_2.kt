@@ -64,6 +64,11 @@ import androidx.compose.ui.unit.dp
 import com.example.kotlin1.ui.theme.Kotlin1Theme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -73,12 +78,16 @@ class lr10_2 : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             Kotlin1Theme {
-                CoroutinesScreen();
+                Column {
+                    CoroutinesScreen()
+                    FlowScreen()
                 }
             }
         }
     }
+}
 
+// == первая часть ==
 @Composable
 fun CoroutinesScreen() {
     var isLoading by remember { mutableStateOf(false) }
@@ -134,6 +143,79 @@ suspend fun simulateLongOperation(duration: Long): String {
     return "Операция завершена за $duration мс"
 }
 
+// == вторая часть ==
+
+fun numberFlow(): Flow<Int> = flow {
+    for (i in 1..10) {
+        delay(500)
+        emit(i)
+    }
+}
+fun transformedFlow(flow: Flow<Int>): Flow<Int> = flow
+    .map { it * it }
+    .filter { it % 2 == 0 }
+
+fun errorFlow(): Flow<String> = flow {
+    emit("Первое значение")
+    delay(500)
+    emit("Второе значение")
+    delay(500)
+    throw RuntimeException("Произошла ошибка!")
+}.catch { exception ->
+    emit("Ошибка обработана: ${exception.message}")
+}
+@Composable
+fun FlowScreen() {
+    var flowValues by remember { mutableStateOf<List<String>>(emptyList()) }
+    val scope = rememberCoroutineScope()
+
+    Column {
+        LazyColumn {
+            items(flowValues) { value ->
+                Text(text = value)
+            }
+        }
+
+        Button(
+            onClick = {
+                flowValues = emptyList()
+                scope.launch {
+                    numberFlow().collect { value ->
+                        flowValues = flowValues + "Число: $value"
+                    }
+                }
+            }
+        ) {
+            Text("Запустить Flow")
+        }
+
+        Button(
+            onClick = {
+                flowValues = emptyList()
+                scope.launch {
+                    transformedFlow(numberFlow()).collect { value ->
+                        flowValues = flowValues + "Квадрат четного: $value"
+                    }
+                }
+            }
+        ) {
+            Text("Запустить преобразованный Flow")
+        }
+
+        Button(
+            onClick = {
+                flowValues = emptyList()
+                scope.launch {
+                    errorFlow().collect { value ->
+                        flowValues = flowValues + value
+                    }
+                }
+            }
+        ) {
+            Text("Запустить Flow с ошибкой")
+        }
+    }
+}
 
 
 
