@@ -10,9 +10,11 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -59,12 +61,18 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.unit.dp
 import com.example.kotlin1.ui.theme.Kotlin1Theme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
@@ -72,6 +80,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import kotlin.collections.plusAssign
 
 class lr10_2 : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,6 +90,7 @@ class lr10_2 : ComponentActivity() {
                 Column {
                     CoroutinesScreen()
                     FlowScreen()
+                    StateFlowScreen()
                 }
             }
         }
@@ -216,6 +226,89 @@ fun FlowScreen() {
         }
     }
 }
+
+// == третья часть ==
+
+@Composable
+fun StateFlowScreen() {
+    val counterStateFlow = remember { MutableStateFlow(0) }
+    val counter: StateFlow<Int> = counterStateFlow.asStateFlow()
+    val counterValue by counter.collectAsState()
+    val isAutoIncrementingStateFlow = remember { MutableStateFlow(false) }
+    val isAutoIncrementing: StateFlow<Boolean> = isAutoIncrementingStateFlow.asStateFlow()
+    val isAutoIncrementingValue by isAutoIncrementing.collectAsState()
+    val scope = rememberCoroutineScope()
+    var autoIncrementJob by remember { mutableStateOf<Job?>(null) }
+
+    fun increment() {
+        counterStateFlow.value += 1
+    }
+
+    fun decrement() {
+        counterStateFlow.value -= 1
+    }
+
+    fun reset() {
+        counterStateFlow.value = 0
+    }
+
+    fun incrementBy(value: Int) {
+        counterStateFlow.value += value
+    }
+    fun toggleAutoIncrement() {
+        if (isAutoIncrementingValue) {
+            isAutoIncrementingStateFlow.value = false
+            autoIncrementJob?.cancel()
+            autoIncrementJob = null
+        } else {
+            isAutoIncrementingStateFlow.value = true
+            autoIncrementJob = scope.launch {
+                while (true) {
+                    delay(1000)
+                    counterStateFlow.value += 1
+                }
+            }
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            autoIncrementJob?.cancel()
+        }
+    }
+
+    Column {
+        Text(
+            text = counterValue.toString(),
+            style = MaterialTheme.typography.displayLarge
+        )
+        if (isAutoIncrementingValue) {
+            Row {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                Text("Автоинкремент активен")
+            }
+        }
+
+        Row {
+            Button(onClick = { decrement() }) { Text("-1") }
+            Button(onClick = { increment() }) { Text("+1") }
+        }
+
+        Button(onClick = { reset() }) {
+            Text("Сброс")
+        }
+
+        Button(onClick = { incrementBy(5) }) {
+            Text("+5")
+        }
+
+        Button(onClick = { toggleAutoIncrement() }) {
+            Text(if (isAutoIncrementingValue) "Остановить" else "Запустить")
+        }
+    }
+}
+
+
+
 
 
 
