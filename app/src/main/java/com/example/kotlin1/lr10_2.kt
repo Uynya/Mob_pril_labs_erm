@@ -62,6 +62,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.unit.dp
@@ -70,8 +71,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
@@ -81,6 +85,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 import kotlin.collections.plusAssign
+import kotlin.random.Random
 
 class lr10_2 : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,6 +96,7 @@ class lr10_2 : ComponentActivity() {
                     CoroutinesScreen()
                     FlowScreen()
                     StateFlowScreen()
+                    SharedFlowScreen()
                 }
             }
         }
@@ -306,6 +312,82 @@ fun StateFlowScreen() {
         }
     }
 }
+
+// == четвёртая часть ==
+
+@Composable
+fun SharedFlowScreen() {
+    val eventsSharedFlow = remember { MutableSharedFlow<String>(replay = 3) }
+    val eventsFlow: SharedFlow<String> = eventsSharedFlow.asSharedFlow()
+    var events by remember { mutableStateOf<List<String>>(emptyList()) }
+    var eventCount by remember { mutableStateOf(0) }
+    var eventCounter by remember { mutableStateOf(0) }
+    val scope = rememberCoroutineScope()
+    var isAutoGenerating by remember { mutableStateOf(false) }
+    var autoGenerationJob by remember { mutableStateOf<Job?>(null) }
+    LaunchedEffect(Unit) {
+        eventsFlow.collect { event ->
+            events = (events + event).takeLast(10) // Храним только последние 10
+            eventCount++
+        }
+    }
+    fun emitEvent(message: String) {
+        scope.launch {
+            eventsSharedFlow.emit(message)
+        }
+    }
+    fun startAutoGeneration() {
+        if (autoGenerationJob?.isActive == true) return
+        isAutoGenerating = true
+        autoGenerationJob = scope.launch {
+            while (true) {
+                delay(2000)
+                eventCounter++
+                val randomNumber = Random.nextInt(1, 101)
+                emitEvent("Событие #$eventCounter: $randomNumber")
+            }
+        }
+    }
+    fun stopAutoGeneration() {
+        isAutoGenerating = false
+        autoGenerationJob?.cancel()
+        autoGenerationJob = null
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            autoGenerationJob?.cancel()
+        }
+    }
+    Column {
+        Text("Всего событий: $eventCount")
+        LazyColumn {
+            items(events.reversed()) { event ->
+                Card {
+                    Text(text = event)
+                }
+            }
+        }
+        Button(
+            onClick = {
+                emitEvent("Ручное событие #${eventCount + 1}")
+            }
+        ) {
+            Text("Сгенерировать событие")
+        }
+        Button(
+            onClick = {
+                if (isAutoGenerating) {
+                    stopAutoGeneration()
+                } else {
+                    startAutoGeneration()
+                }
+            }
+        ) {
+            Text(if (isAutoGenerating) "Остановить" else "Запустить")
+        }
+    }
+}
+
 
 
 
